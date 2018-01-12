@@ -7,7 +7,7 @@ output "opsman_sql_db_name" {
 }
 
 output "opsman_sql_username" {
-  value = "${random_id.opsman_db_username.b64_std}"
+  value = "${element(concat(random_id.opsman_db_username.*.b64, list("")), 0)}"
 }
 
 output "ert_sql_username" {

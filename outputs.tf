@@ -30,10 +30,6 @@ output "ops_manager_private_ip" {
   value = "${google_compute_instance.ops-manager.network_interface.0.address}"
 }
 
-output "optional_ops_manager_public_ip" {
-  value = "${element(concat(google_compute_address.optional-ops-manager-ip.*.address, list("")), 0)}"
-}
-
 output "env_dns_zone_name_servers" {
   value = "${google_dns_managed_zone.env_dns_zone.name_servers}"
 }
