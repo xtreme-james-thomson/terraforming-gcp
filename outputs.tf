@@ -26,6 +26,10 @@ output "ops_manager_public_ip" {
   value = "${google_compute_instance.ops-manager.network_interface.0.access_config.0.assigned_nat_ip}"
 }
 
+output "ops_manager_private_ip" {
+  value = "${google_compute_instance.ops-manager.network_interface.0.address}"
+}
+
 output "optional_ops_manager_public_ip" {
   value = "${google_compute_instance.optional-ops-manager.network_interface.0.access_config.0.assigned_nat_ip}"
 }
