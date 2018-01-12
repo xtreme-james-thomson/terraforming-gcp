@@ -6,7 +6,7 @@ resource "random_id" "db-name" {
 resource "google_sql_database_instance" "master" {
   region           = "${var.region}"
   database_version = "MYSQL_5_6"
-  name             = "${var.env_name}-${replace(lower(random_id.db-name.b64), "_", "-")}"
+  name             = "${var.env_name}-${replace(lower(random_id.db-name.b64_std), "_", "-")}"
 
   settings {
     tier = "${var.sql_db_tier}"

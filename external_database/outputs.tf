@@ -7,19 +7,19 @@ output "opsman_sql_db_name" {
 }
 
 output "opsman_sql_username" {
-  value = "${random_id.opsman_db_username.b64}"
+  value = "${random_id.opsman_db_username.b64_std}"
 }
 
 output "opsman_sql_password" {
-  value = "${random_id.opsman_db_password.b64}"
+  value = "${random_id.opsman_db_password.b64_std}"
 }
 
 output "ert_sql_username" {
-  value = "${random_id.ert_db_username.b64}"
+  value = "${random_id.ert_db_username.b64_std}"
 }
 
 output "ert_sql_password" {
-  value = "${random_id.ert_db_password.b64}"
+  value = "${random_id.ert_db_password.b64_std}"
 }
 
 output "ip" {
