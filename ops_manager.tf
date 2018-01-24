@@ -33,12 +33,19 @@ resource "google_compute_image" "optional-ops-manager-image" {
   }
 }
 
+resource "google_compute_address" "ops-manager-ip" {
+  name = "${var.env_name}-ops-manager-ip"
+}
+
 resource "google_compute_instance" "ops-manager" {
-  name           = "${var.env_name}-ops-manager"
-  machine_type   = "${var.opsman_machine_type}"
-  zone           = "${element(var.zones, 1)}"
-  create_timeout = 10
-  tags           = ["${var.env_name}-ops-manager-external"]
+  name         = "${var.env_name}-ops-manager"
+  machine_type = "${var.opsman_machine_type}"
+  zone         = "${element(var.zones, 1)}"
+  tags         = ["${var.env_name}-ops-manager-external"]
+
+  timeouts {
+    create = "10m"
+  }
 
   boot_disk {
     initialize_params {
@@ -51,7 +58,7 @@ resource "google_compute_instance" "ops-manager" {
     subnetwork = "${google_compute_subnetwork.management-subnet.name}"
 
     access_config {
-      # Empty for ephemeral external IP allocation
+      nat_ip = "${google_compute_address.ops-manager-ip.address}"
     }
   }
 
@@ -66,24 +73,34 @@ resource "google_compute_instance" "ops-manager" {
   }
 }
 
-resource "google_compute_instance" "optional-ops-manager" {
-  name           = "${var.env_name}-optional-ops-manager"
-  machine_type   = "${var.opsman_machine_type}"
-  zone           = "${element(var.zones, 1)}"
-  count          = "${min(length(split("", var.optional_opsman_image_url)),1)}"
-  create_timeout = 10
-  tags           = ["${var.env_name}-ops-manager-external"]
+resource "google_compute_address" "optional-ops-manager-ip" {
+  name  = "${var.env_name}-optional-ops-manager-ip"
+  count = "${min(length(split("", var.optional_opsman_image_url)),1)}"
+}
 
-  disk {
-    image = "${google_compute_image.optional-ops-manager-image.self_link}"
-    size  = 150
+resource "google_compute_instance" "optional-ops-manager" {
+  name         = "${var.env_name}-optional-ops-manager"
+  machine_type = "${var.opsman_machine_type}"
+  zone         = "${element(var.zones, 1)}"
+  count        = "${min(length(split("", var.optional_opsman_image_url)),1)}"
+  tags         = ["${var.env_name}-ops-manager-external"]
+
+  timeouts {
+    create = "10m"
+  }
+
+  boot_disk {
+    initialize_params {
+      image = "${google_compute_image.optional-ops-manager-image.self_link}"
+      size  = 150
+    }
   }
 
   network_interface {
     subnetwork = "${google_compute_subnetwork.management-subnet.name}"
 
     access_config {
-      # Empty for ephemeral external IP allocation
+      nat_ip = "${google_compute_address.optional-ops-manager-ip.address}"
     }
   }
 
@@ -99,7 +116,7 @@ resource "google_compute_instance" "optional-ops-manager" {
 }
 
 resource "google_storage_bucket" "director" {
-  name          = "${var.env_name}-director"
+  name          = "${var.project}-${var.env_name}-director"
   force_destroy = true
 
   count = "${var.opsman_storage_bucket_count}"

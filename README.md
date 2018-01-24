@@ -32,9 +32,9 @@ You will need a key file for your [service account](https://cloud.google.com/iam
 to allow terraform to deploy resources. If you don't have one, you can create a service account and a key for it:
 
 ```bash
-gcloud iam service-accounts create some-account-name
-gcloud iam service-accounts keys create "terraform.key.json" --iam-account "some-account-name@yourproject.iam.gserviceaccount.com"
-gcloud projects add-iam-policy-binding PROJECT_ID --member 'serviceAccount:some-account-name@PROJECT_ID.iam.gserviceaccount.com' --role 'roles/owner'
+gcloud iam service-accounts create ACCOUNT_NAME --display-name "Some Account Name"
+gcloud iam service-accounts keys create "terraform.key.json" --iam-account "ACCOUNT_NAME@PROJECT_ID.iam.gserviceaccount.com"
+gcloud projects add-iam-policy-binding PROJECT_ID --member 'serviceAccount:ACCOUNT_NAME@PROJECT_ID.iam.gserviceaccount.com' --role 'roles/owner'
 ```
 
 You will need to enable the following Google Cloud APIs:
@@ -51,11 +51,13 @@ You should fill in the stub values with the correct content.
 
 ```hcl
 env_name         = "some-environment-name"
-region           = "us-central1"
-opsman_image_url = "https://storage.googleapis.com/ops-manager-us/pcf-gcp-1.12.0.tar.gz"
-zones            = ["us-central1-a", "us-central1-b", "us-central1-c"]
 project          = "your-gcp-project"
+region           = "us-central1"
+zones            = ["us-central1-a", "us-central1-b", "us-central1-c"]
 dns_suffix       = "gcp.some-project.cf-app.com"
+opsman_image_url = "https://storage.googleapis.com/ops-manager-us/pcf-gcp-1.12.0.tar.gz"
+
+buckets_location = "US"
 
 ssl_cert = <<SSL_CERT
 -----BEGIN CERTIFICATE-----
@@ -63,7 +65,7 @@ some cert
 -----END CERTIFICATE-----
 SSL_CERT
 
-ssl_cert_private_key = <<SSL_KEY
+ssl_private_key = <<SSL_KEY
 -----BEGIN RSA PRIVATE KEY-----
 some cert private key
 -----END RSA PRIVATE KEY-----
@@ -86,15 +88,18 @@ SERVICE_ACCOUNT_KEY
 ```
 
 ### Var Details
+- env_name: **(required)** An arbitrary unique name for namespacing resources. Max 23 characters.
 - project: **(required)** ID for your GCP project.
-- env_name: **(required)** An arbitrary unique name for namespacing resources.
 - region: **(required)** Region in which to create resources (e.g. us-central1)
 - zones: **(required)** Zones in which to create resources. Must be within the given region. Currently you must specify exactly 3 Zones for this terraform configuration to work. (e.g. [us-central1-a, us-central1-b, us-central1-c])
 - opsman_image_url **(required)** Source URL of the Ops Manager image you want to boot.
 - service_account_key: **(required)** Contents of your service account key file generated using the `gcloud iam service-accounts keys create` command.
 - dns_suffix: **(required)** Domain to add environment subdomain to (e.g. foo.example.com)
-- ssl_cert: **(required)** SSL certificate for HTTP load balancer configuration. Can be either trusted or self-signed.
-- ssl_cert_private_key:  **(required)** Private key for above SSL certificate.
+- buckets_location: **(optional)** Loction in which to create buckets. Defaults to US.
+- ssl_cert: **(optional)** SSL certificate for HTTP load balancer configuration. Required unless `ssl_ca_cert` is specified.
+- ssl_private_key: **(optional)** Private key for above SSL certificate. Required unless `ssl_ca_cert` is specified.
+- ssl_ca_cert: **(optional)** SSL CA certificate used to generate self-signed HTTP load balancer certificate. Required unless `ssl_cert` is specified.
+- ssl_ca_private_key: **(optional)** Private key for above SSL CA certificate. Required unless `ssl_cert` is specified.
 - opsman_storage_bucket_count: *(optional)* Google Storage Bucket for BOSH's Blobstore.
 
 ## DNS Records
@@ -108,21 +113,23 @@ SERVICE_ACCOUNT_KEY
 - tcp.*$env_name*.*$dns_suffix*: Points at the TCP load balancer in front of the TCP router.
 
 ## Isolation Segments (optional)
-- isolation_segment *(optional)* When set to "true" creates HTTP load-balancer across 3 zones for isolation segments.
-- iso_seg_ssl_cert: *(optional)* SSL certificate for HTTP load balancer configuration. Can be either trusted or self-signed.
-- iso_seg_ssl_cert_private_key:  *(optional)* Private key for above SSL certificate.
+- isolation_segment **(optional)** When set to "true" creates HTTP load-balancer across 3 zones for isolation segments.
+- iso_seg_ssl_cert: **(optional)** SSL certificate for Iso Seg HTTP load balancer configuration. Required unless `iso_seg_ssl_ca_cert` is specified.
+- iso_seg_ssl_private_key: **(optional)** Private key for above SSL certificate. Required unless `iso_seg_ssl_ca_cert` is specified.
+- iso_seg_ssl_ca_cert: **(optional)** SSL CA certificate used to generate self-signed Iso Seg HTTP load balancer certificate. Required unless `iso_seg_ssl_cert` is specified.
+- iso_seg_ssl_ca_private_key: **(optional)** Private key for above SSL CA certificate. Required unless `iso_seg_ssl_cert` is specified.
 
 ## Cloud SQL Configuration (optional)
-- external_database: *(optional)* When set to "true", a cloud SQL instance will be deployed for the Ops Manager and ERT.
+- external_database: *(optional)* When set to "true", a cloud SQL instance will be deployed for the Ops Manager and PAS.
 
 #### Ops Manager
 - opsman_sql_db_host: *(optional)* The host the user can connect from. Can be an IP address. Changing this forces a new resource to be created.
 
-#### ERT
-- ert_sql_db_host: *(optional)* The host the user can connect from. Can be an IP address. Changing this forces a new resource to be created.
+#### PAS
+- pas_sql_db_host: *(optional)* The host the user can connect from. Can be an IP address. Changing this forces a new resource to be created.
 
-## Elastic Runtime Cloud Controller's Google Cloud Storage Buckets (optional)
-- create_gcs_buckets: *(optional)* When set to "false", buckets will not be created for Elastic Runtime Cloud Controller. Defaults to "true".
+## PAS Cloud Controller's Google Cloud Storage Buckets (optional)
+- create_gcs_buckets: *(optional)* When set to "false", buckets will not be created for PAS Cloud Controller. Defaults to "true".
 
 ## Running
 
@@ -132,7 +139,8 @@ Note: please make sure you have created the `terraform.tfvars` file above as men
 
 ```bash
 terraform init
-terraform apply
+terraform plan -out=plan
+terraform apply plan
 ```
 
 ### Tearing down environment

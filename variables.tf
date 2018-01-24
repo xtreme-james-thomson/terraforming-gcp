@@ -10,20 +10,25 @@ variable "region" {
   type = "string"
 }
 
+variable "buckets_location" {
+  type    = "string"
+  default = "US"
+}
+
 variable "management_cidr" {
-  type = "string"
+  type        = "string"
   description = "cidr for management subnet"
   default     = "10.0.0.0/24"
 }
 
-variable "ert_cidr" {
-  type = "string"
-  description = "cidr for ert subnet"
+variable "pas_cidr" {
+  type        = "string"
+  description = "cidr for pas subnet"
   default     = "10.0.4.0/24"
 }
 
 variable "services_cidr" {
-  type = "string"
+  type        = "string"
   description = "cidr for services subnet"
   default     = "10.0.8.0/24"
 }
@@ -58,16 +63,30 @@ variable "dns_suffix" {
 
 variable "ssl_cert" {
   type        = "string"
-  description = "ssl certificate content"
+  description = "the contents of an SSL certificate to be used by the LB, optional if `ssl_ca_cert` is provided"
+  default     = ""
 }
 
-variable "ssl_cert_private_key" {
+variable "ssl_private_key" {
   type        = "string"
-  description = "ssl certificate private key content"
+  description = "the contents of an SSL private key to be used by the LB, optional if `ssl_ca_cert` is provided"
+  default     = ""
+}
+
+variable "ssl_ca_cert" {
+  type        = "string"
+  description = "the contents of a CA public key to be used to sign the generated LB certificate, optional if `ssl_cert` is provided"
+  default     = ""
+}
+
+variable "ssl_ca_private_key" {
+  type        = "string"
+  description = "the contents of a CA private key to be used to sign the generated LB certificate, optional if `ssl_cert` is provided"
+  default     = ""
 }
 
 variable "external_database" {
-  description = "standups up a cloud sql database instance for the ops manager and ERT"
+  description = "standups up a cloud sql database instance for the ops manager and PAS"
   default     = false
 }
 
@@ -81,7 +100,7 @@ variable "opsman_storage_bucket_count" {
   description = "Optional configuration of a Google Storage Bucket for BOSH's blobstore"
 }
 
-variable "ert_sql_db_host" {
+variable "pas_sql_db_host" {
   type    = "string"
   default = ""
 }
@@ -102,13 +121,25 @@ variable "isolation_segment" {
 
 variable "iso_seg_ssl_cert" {
   type        = "string"
-  description = "ssl certificate content"
+  description = "the contents of an SSL certificate to be used by the LB, optional if `iso_seg_ssl_ca_cert` is provided"
   default     = ""
 }
 
-variable "iso_seg_ssl_cert_private_key" {
+variable "iso_seg_ssl_private_key" {
   type        = "string"
-  description = "ssl certificate private key content"
+  description = "the contents of an SSL private key to be used by the LB, optional if `iso_seg_ssl_ca_cert` is provided"
+  default     = ""
+}
+
+variable "iso_seg_ssl_ca_cert" {
+  type        = "string"
+  description = "the contents of a CA public key to be used to sign the generated iso seg LB certificate, optional if `iso_seg_ssl_cert` is provided"
+  default     = ""
+}
+
+variable "iso_seg_ssl_ca_private_key" {
+  type        = "string"
+  description = "the contents of a CA private key to be used to sign the generated iso seg LB certificate, optional if `iso_seg_ssl_cert` is provided"
   default     = ""
 }
 
@@ -119,4 +150,13 @@ variable "iso_seg_ssl_cert_private_key" {
 variable "create_gcs_buckets" {
   description = "create Google Storage Buckets for Elastic Runtime Cloud Controller's file storage"
   default     = true
+}
+
+/*****************************
+ * PKS Options *
+ *****************************/
+
+variable "pks" {
+  description = "create the required infrastructure to deploy pks"
+  default     = false
 }

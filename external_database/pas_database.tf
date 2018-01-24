@@ -1,7 +1,7 @@
 resource "google_sql_database" "uaa" {
   name       = "uaa"
   instance   = "${google_sql_database_instance.master.name}"
-  depends_on = ["google_sql_user.ert", "google_sql_user.opsman"]
+  depends_on = ["google_sql_user.pas", "google_sql_user.opsman"]
 
   count = "${var.count}"
 }
@@ -82,6 +82,30 @@ resource "google_sql_database" "nfsvolume" {
   name       = "nfsvolume"
   instance   = "${google_sql_database_instance.master.name}"
   depends_on = ["google_sql_database.networkpolicyserver"]
+
+  count = "${var.count}"
+}
+
+resource "google_sql_database" "silk" {
+  name       = "silk"
+  instance   = "${google_sql_database_instance.master.name}"
+  depends_on = ["google_sql_database.nfsvolume"]
+
+  count = "${var.count}"
+}
+
+resource "google_sql_database" "locket" {
+  name       = "locket"
+  instance   = "${google_sql_database_instance.master.name}"
+  depends_on = ["google_sql_database.silk"]
+
+  count = "${var.count}"
+}
+
+resource "google_sql_database" "credhub" {
+  name       = "credhub"
+  instance   = "${google_sql_database_instance.master.name}"
+  depends_on = ["google_sql_database.locket"]
 
   count = "${var.count}"
 }

@@ -3,31 +3,31 @@ output "service_account_email" {
 }
 
 output "ops_manager_dns" {
-  value = "${google_dns_record_set.ops-manager-dns.name}"
+  value = "${replace(google_dns_record_set.ops-manager-dns.name, "/\\.$/", "")}"
 }
 
 output "optional_ops_manager_dns" {
-  value = "${google_dns_record_set.optional-ops-manager-dns.name}"
+  value = "${replace(element(concat(google_dns_record_set.optional-ops-manager-dns.*.name, list("")), 0), "/\\.$/", "")}"
 }
 
 output "sys_domain" {
-  value = "sys.${var.env_name}.${var.dns_suffix}"
+  value = "${replace(replace(google_dns_record_set.wildcard-sys-dns.name, "/^\\*\\./", ""), "/\\.$/", "")}"
 }
 
 output "apps_domain" {
-  value = "apps.${var.env_name}.${var.dns_suffix}"
+  value = "${replace(replace(google_dns_record_set.wildcard-apps-dns.name, "/^\\*\\./", ""), "/\\.$/", "")}"
 }
 
 output "tcp_domain" {
-  value = "tcp.${var.env_name}.${var.dns_suffix}"
+  value = "${replace(google_dns_record_set.tcp-dns.name, "/\\.$/", "")}"
 }
 
 output "ops_manager_public_ip" {
-  value = "${google_compute_instance.ops-manager.network_interface.0.access_config.0.assigned_nat_ip}"
+  value = "${google_compute_address.ops-manager-ip.address}"
 }
 
 output "optional_ops_manager_public_ip" {
-  value = "${google_compute_instance.optional-ops-manager.network_interface.0.access_config.0.assigned_nat_ip}"
+  value = "${element(concat(google_compute_address.optional-ops-manager-ip.*.address, list("")), 0)}"
 }
 
 output "env_dns_zone_name_servers" {
@@ -74,16 +74,16 @@ output "opsman_sql_db_name" {
   value = "${module.external_database.opsman_sql_db_name}"
 }
 
-output "ert_subnet_gateway" {
-  value = "${google_compute_subnetwork.ert-subnet.gateway_address}"
+output "pas_subnet_gateway" {
+  value = "${google_compute_subnetwork.pas-subnet.gateway_address}"
 }
 
-output "ert_subnet_cidrs" {
-  value = ["${google_compute_subnetwork.ert-subnet.ip_cidr_range}"]
+output "pas_subnet_cidrs" {
+  value = ["${google_compute_subnetwork.pas-subnet.ip_cidr_range}"]
 }
 
-output "ert_subnet_name" {
-  value = "${google_compute_subnetwork.ert-subnet.name}"
+output "pas_subnet_name" {
+  value = "${google_compute_subnetwork.pas-subnet.name}"
 }
 
 output "services_subnet_gateway" {
@@ -102,8 +102,32 @@ output "http_lb_backend_name" {
   value = "${google_compute_backend_service.http_lb_backend_service.name}"
 }
 
+output "ssl_cert" {
+  sensitive = true
+  value     = "${length(var.ssl_ca_cert) > 0 ? element(concat(tls_locally_signed_cert.ssl_cert.*.cert_pem, list("")), 0) : var.ssl_cert}"
+}
+
+output "ssl_private_key" {
+  sensitive = true
+  value     = "${length(var.ssl_ca_cert) > 0 ? element(concat(tls_private_key.ssl_private_key.*.private_key_pem, list("")), 0) : var.ssl_private_key}"
+}
+
+output "isoseg_domain" {
+  value = "${module.isolation_segment.domain}"
+}
+
 output "isoseg_lb_backend_name" {
   value = "${module.isolation_segment.load_balancer_name}"
+}
+
+output "iso_seg_ssl_cert" {
+  sensitive = true
+  value     = "${module.isolation_segment.ssl_cert}"
+}
+
+output "iso_seg_ssl_private_key" {
+  sensitive = true
+  value     = "${module.isolation_segment.ssl_private_key}"
 }
 
 output "ws_router_pool" {
@@ -119,31 +143,32 @@ output "tcp_router_pool" {
 }
 
 output "buildpacks_bucket" {
-  value = "${google_storage_bucket.buildpacks.name}"
+  value = "${element(concat(google_storage_bucket.buildpacks.*.name, list("")), 0)}"
 }
 
 output "droplets_bucket" {
-  value = "${google_storage_bucket.droplets.name}"
+  value = "${element(concat(google_storage_bucket.droplets.*.name, list("")), 0)}"
 }
 
 output "packages_bucket" {
-  value = "${google_storage_bucket.packages.name}"
+  value = "${element(concat(google_storage_bucket.packages.*.name, list("")), 0)}"
 }
 
 output "resources_bucket" {
-  value = "${google_storage_bucket.resources.name}"
+  value = "${element(concat(google_storage_bucket.resources.*.name, list("")), 0)}"
 }
 
 output "director_blobstore_bucket" {
-  value = "${google_storage_bucket.director.name}"
+  value = "${element(concat(google_storage_bucket.director.*.name, list("")), 0)}"
 }
 
-output "ert_sql_username" {
-  value = "${module.external_database.ert_sql_username}"
+output "pas_sql_username" {
+  value = "${module.external_database.pas_sql_username}"
 }
 
-output "ert_sql_password" {
-  value = "${module.external_database.ert_sql_password}"
+output "pas_sql_password" {
+  sensitive = true
+  value     = "${module.external_database.pas_sql_password}"
 }
 
 output "opsman_sql_username" {
@@ -151,15 +176,18 @@ output "opsman_sql_username" {
 }
 
 output "opsman_sql_password" {
-  value = "${module.external_database.opsman_sql_password}"
+  sensitive = true
+  value     = "${module.external_database.opsman_sql_password}"
 }
 
 output "ops_manager_ssh_private_key" {
-  value = "${tls_private_key.ops-manager.private_key_pem}"
+  sensitive = true
+  value     = "${tls_private_key.ops-manager.private_key_pem}"
 }
 
 output "ops_manager_ssh_public_key" {
-  value = "${format("ubuntu:%s", tls_private_key.ops-manager.public_key_openssh)}"
+  sensitive = true
+  value     = "${format("ubuntu:%s", tls_private_key.ops-manager.public_key_openssh)}"
 }
 
 output "cf_ws_address" {
@@ -168,4 +196,12 @@ output "cf_ws_address" {
 
 output "dns_managed_zone" {
   value = "${google_dns_managed_zone.env_dns_zone.name}"
+}
+
+output "pks_domain" {
+  value = "${module.pks.domain}"
+}
+
+output "pks_lb_backend_name" {
+  value = "${module.pks.load_balancer_name}"
 }
