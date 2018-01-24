@@ -26,6 +26,10 @@ output "ops_manager_public_ip" {
   value = "${google_compute_address.ops-manager-ip.address}"
 }
 
+output "ops_manager_private_ip" {
+  value = "${google_compute_instance.ops-manager.network_interface.0.address}"
+}
+
 output "optional_ops_manager_public_ip" {
   value = "${element(concat(google_compute_address.optional-ops-manager-ip.*.address, list("")), 0)}"
 }
